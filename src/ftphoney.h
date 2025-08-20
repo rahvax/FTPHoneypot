@@ -13,9 +13,14 @@
 #define LOGFPATH "./logs/honeypot.log"
 
 int die(const char *fmt, ...);
+/* Criar diretório de logs */
 void makeLogdir(void);
+/* Escrever logs de forma formatada */
 void writeLog(const char *clientIP, const char *fmt, ...);
+/* Enviar ao cliente uma resposta formatada */
 ssize_t sendReply(int sock, const char *fmt, ...);
+/* Executar o handler dos comandos e operações */
 void handleClient(int clientSock, struct sockaddr_in *peer);
+/* Enviar signal() */
 void setupSignals(void);
 #endif
