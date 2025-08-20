@@ -7,7 +7,6 @@
 #include <asm-generic/socket.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -19,12 +18,7 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <stdarg.h>
-
-#define BACKLOG 10
-#define BUFSIZE 1024
-#define LOGPATH "./logs/"
-#define LOGFPATH "./logs/honeypot.log"
-
+#include "ftphoney.h"
 
 int die(const char *fmt, ...) {
   va_list ap;
@@ -34,7 +28,7 @@ int die(const char *fmt, ...) {
 }
 
 void makeLogdir(void) {
-  if (access(LOGPATH, F_OK) != 0) {
+  if (access(LOGFPATH, F_OK) != 0) {
     if (mkdir(LOGPATH, 0700) != 0)
       perror("[X] erro ao criar PATH de logs");
   }

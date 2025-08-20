@@ -15,11 +15,6 @@
 #include <netinet/in.h>
 #include "ftphoney.h"
 
-#define BACKLOG 10
-#define BUFSIZE 1024
-#define LOGPATH "./logs/"
-#define LOGFPATH "./logs/honeypot.log"
-
 int main(int argc, char **argv) {
   int port = 2121, srv = 0, opt = 1;
   struct sockaddr_in sa;

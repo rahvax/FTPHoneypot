@@ -7,6 +7,11 @@
 #define _FTPHONEY_H
 #include <sys/socket.h>
 
+#define BACKLOG 10
+#define BUFSIZE 1024
+#define LOGPATH "./logs/"
+#define LOGFPATH "./logs/honeypot.log"
+
 int die(const char *fmt, ...);
 void makeLogdir(void);
 void writeLog(const char *clientIP, const char *fmt, ...);
