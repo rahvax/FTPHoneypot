@@ -28,9 +28,9 @@ int die(const char *fmt, ...) {
 }
 
 void makeLogdir(void) {
-  if (access(LOGFPATH, F_OK) != 0) {
-    if (mkdir(LOGPATH, 0700) != 0)
-      perror("[X] erro ao criar PATH de logs");
+  if (access(LOGPATH, F_OK) != 0) { // UPDATE FOR DUMBS!
+    if (mkdir(LOGPATH, 0700) != 0) // update for dumbs
+      perror("[X] erro ao criar diretório");
   }
 }
 
