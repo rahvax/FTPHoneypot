@@ -23,4 +23,10 @@ ssize_t sendReply(int sock, const char *fmt, ...);
 void handleClient(int clientSock, struct sockaddr_in *peer);
 /* Enviar signal() */
 void setupSignals(void);
+/* Ouvir o  servidor e a interação */
+void listenServer(struct sockaddr_in serverAddress, const int port, const int serverSocket, const int option);
+/* Iniciar a interação do socket */
+void startServer(const int port);
+/* Construir socket address */
+struct sockaddr_in buildServer(const int port);
 #endif

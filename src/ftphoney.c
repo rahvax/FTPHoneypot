@@ -85,7 +85,7 @@ void handleClient(int clientSock, struct sockaddr_in *peer) {
 
   inet_ntop(AF_INET, &(peer->sin_addr), clientIP, sizeof(clientIP));
   writeLog(clientIP, "NEW CONNECTION");
-  sendReply(clientSock, "220 Honeypot - Rahvax");
+  sendReply(clientSock, "220 Honeypot Server - Rahvax");
 
   while ((len = recv(clientSock, buffer, sizeof(buffer) - 1, 0)) > 0) {
     buffer[len] = '\0';
@@ -161,7 +161,6 @@ void handleClient(int clientSock, struct sockaddr_in *peer) {
         sendReply(clientSock, "502 Command not implemented on HONEYPOT.");
         writeLog(clientIP, "UNKNOW CMD: %s %s", cmd, arg);
       }
-
       if (next)
         line = next + 1;
       else break;
@@ -177,5 +176,62 @@ void handleClient(int clientSock, struct sockaddr_in *peer) {
 
 void setupSignals(void) {
   signal(SIGCHLD, SIG_IGN);
+}
+
+void listenServer(struct sockaddr_in serverAddress, const int port, const int serverSocket, const int option) {
+  if (bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
+    die("[X]: erro no bind: %s\n", strerror(errno));
+  if (listen(serverSocket, BACKLOG) < 0)
+    die("[X]: erro ao escutar: %s\n", strerror(errno));
+  setupSignals();
+  makeLogdir();
+
+  printf("[!] Honeypot ouvindo na porta %i\n", port);
+  while (1) {
+    struct sockaddr_in peerAddress;
+    socklen_t plen = sizeof(peerAddress);
+    int clientSocket = accept(serverSocket, (struct sockaddr *)&peerAddress, &plen);
+    pid_t pid;
+    
+    if (clientSocket < 0) {
+      if (errno == EINTR)
+        continue;
+      perror("[X]: erro em accept");
+      continue;
+    }
+    pid = fork();
+    if (pid < 0) {
+      perror("[X]: erro em fork");
+      close(clientSocket);
+      continue;
+    } else if (pid == 0) {
+      close(serverSocket);
+      handleClient(clientSocket, &peerAddress);
+      return;
+    } else
+      close (clientSocket);
+  }
+}
+
+struct sockaddr_in buildServer(const int port) {
+  struct sockaddr_in serverAddress;
+  serverAddress.sin_addr.s_addr = INADDR_ANY;
+  serverAddress.sin_family = AF_INET;
+  serverAddress.sin_port = htons(port);
+  return serverAddress;
+}
+
+void startServer(const int port) {
+  int socketServer = 0, option = 1;
+  struct sockaddr_in serverAddress;
+  if ((socketServer = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    die("socket: %s\n", strerror(errno));
+    return;
+  }
+  setsockopt(socketServer, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+  memset(&serverAddress, 0, sizeof(serverAddress));
+  serverAddress = buildServer(port);
+  listenServer(serverAddress, port, socketServer, option);
+  close(socketServer);
 }
 

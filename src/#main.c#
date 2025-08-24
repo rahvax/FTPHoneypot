@@ -5,7 +5,6 @@
   * aqui é o arquivo principal, só uso para realizar chamadas
                           das funções e passar os argumentos.
 */
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include "ftphoney.h"
 
