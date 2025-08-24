@@ -1,7 +1,7 @@
 /*
-  Algoritmo das funções declaradas no header.
-  Aqui será o foco de todo o algoritmo e será
-  linkado na compilação pelo Make.
+ * Código da biblioteca
+ * o grande foco aqui é servidor de algoritmo para
+   a linkedição do compilador, chamado pelo makefile.
 */
 #define _GNU_SOURCE
 #include <asm-generic/socket.h>
@@ -27,13 +27,24 @@ int die(const char *fmt, ...) {
   return -1;
 }
 
+/*
+  verificar se é possível acessar o diretório,
+  e caso não tenha, irá criar o diretório.
+*/
 void makeLogdir(void) {
-  if (access(LOGPATH, F_OK) != 0) { // UPDATE FOR DUMBS!
-    if (mkdir(LOGPATH, 0700) != 0) // update for dumbs
+  if (access(LOGPATH, F_OK) != 0) { 
+    if (mkdir(LOGPATH, 0700) != 0) 
       perror("[X] erro ao criar diretório");
   }
 }
 
+/*
+  a função serve para escrever cada log
+  em um arquivo definido pelo macro,
+  recebendo um argumento formatado (fmt)
+  onde terá sua formação citada após,
+  (...) assim como funções como printf()
+*/
 void writeLog(const char *clientIP, const char *fmt, ...) {
   FILE *fp = NULL;
   time_t t = time(NULL);
@@ -59,6 +70,12 @@ void writeLog(const char *clientIP, const char *fmt, ...) {
   fclose(fp);
 }
 
+/*
+  * retornar uma mensagem escrita ao socket address
+    que está aberto pela função handleClient()
+  * a função recebe formatação (fmt) como mencionado
+    anteriormente na função acima
+*/
 ssize_t sendReply(int sock, const char *fmt, ...) {
   char buffer[1024];
   va_list ap;
@@ -72,12 +89,20 @@ ssize_t sendReply(int sock, const char *fmt, ...) {
     return -1;
   if (n >= (int)sizeof(buffer) - 3)
     n = sizeof(buffer) - 3;
+
+  /* isso é gambiarra, não pensei em nada melhor */
   buffer[n] = '\r';
   buffer[n + 1] = '\n';
   buffer[n+2] = '\0';
+
   return send(sock, buffer, n+2, 0);
 }
 
+/*
+  essa função é a responsável por fazer o handler
+  de toda a conexão que foi aberta do cliente ao
+  servidor
+*/
 void handleClient(int clientSock, struct sockaddr_in *peer) {
   char clientIP[INET_ADDRSTRLEN], buffer[BUFSIZ],
        username[256] = {0}, password[256] = {0};
@@ -87,6 +112,7 @@ void handleClient(int clientSock, struct sockaddr_in *peer) {
   writeLog(clientIP, "NEW CONNECTION");
   sendReply(clientSock, "220 Honeypot Server - Rahvax");
 
+  /* aqui será trabalhado a conexão após ser recebida */
   while ((len = recv(clientSock, buffer, sizeof(buffer) - 1, 0)) > 0) {
     buffer[len] = '\0';
     char *line = buffer, *next, cmd[16] = {0}, arg[1024] = {0};
@@ -114,6 +140,29 @@ void handleClient(int clientSock, struct sockaddr_in *peer) {
       for (char *p = cmd; *p; ++p)
         if (*p >= 'a' && *p <= 'z')
           *p -= 32;
+
+      /*
+       * sinceramente, eu admito que fiz isso sabendo
+         que há formas melhores, porém, a ideia desse
+         honeypot é demonstrar a lógica que pode ser
+         realizada em um
+       * todos os argumentos enviados por um cliente
+         serão recebidos aqui verificando a entrada
+         do cliente
+       * você pode reparar que não é um ambiente
+         simulado de fato, e sim, apenas retornos
+         definidos; isso é uma opção que pode ser
+         melhor aproveitada simulando um ambiente
+
+       * AVISO: alguns clientes podem não serem
+         funcionais com esse modo de operação,
+         por isso é recomendado usar o NETCAT
+         que é literalmente um envio direto de
+         informações; eu testei em alguns
+         clientes e funcionam, mas não é algo
+         que sempre será garantido e mudará
+	 de ambiente a ambiente
+       */
       if (!strcmp(cmd, "USER")) {
         strncpy(username, arg, sizeof(username)-1);
         sendReply(clientSock, "331 Password required for %s",
@@ -161,6 +210,7 @@ void handleClient(int clientSock, struct sockaddr_in *peer) {
         sendReply(clientSock, "502 Command not implemented on HONEYPOT.");
         writeLog(clientIP, "UNKNOW CMD: %s %s", cmd, arg);
       }
+
       if (next)
         line = next + 1;
       else break;
@@ -178,6 +228,11 @@ void setupSignals(void) {
   signal(SIGCHLD, SIG_IGN);
 }
 
+/*
+  essa função serve para, após construir,
+  iniciar a ouvir uma porta e começar o
+  handler do honeypot
+ */
 void listenServer(struct sockaddr_in serverAddress, const int port, const int serverSocket, const int option) {
   if (bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
     die("[X]: erro no bind: %s\n", strerror(errno));
@@ -213,6 +268,11 @@ void listenServer(struct sockaddr_in serverAddress, const int port, const int se
   }
 }
 
+/*
+  construir o socket address corretamente
+  e retornar, apenas para tornar mais
+  legível
+ */
 struct sockaddr_in buildServer(const int port) {
   struct sockaddr_in serverAddress;
   serverAddress.sin_addr.s_addr = INADDR_ANY;
@@ -221,6 +281,13 @@ struct sockaddr_in buildServer(const int port) {
   return serverAddress;
 }
 
+/*
+  iniciar o algoritmo de fato,
+  vai definir, alocar e chamar
+  as funções necessárias para
+  começar a ouvir a porta e
+  puxar o handler
+ */
 void startServer(const int port) {
   int socketServer = 0, option = 1;
   struct sockaddr_in serverAddress;
